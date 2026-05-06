@@ -7,6 +7,10 @@ A premium Python utility to analyze and optimize your Dollar Cost Averaging (DCA
 
 ## ✨ Features
 
+- **Fair Comparison Logic**: To ensure mathematical fairness, the simulation:
+    - Anchors the start date to **January 1st** of the starting year.
+    - **Excludes the current month** from the simulation, ensuring every day (1-31) has exactly the same number of opportunities to be tested.
+- **Concurrent Sliding Window Sync**: Fetches historical data in parallel windows using a multi-threaded engine for maximum speed and reliability.
 - **Optimal Day Discovery**: Analyzes every day of the month (1-31) to find the maximum ROI.
 - **Hourly/Intraday Accuracy**: Support for high-fidelity price matching using various intervals (`1h`, `30m`, `15m`, etc.).
 - **Market-Aware Logic**: Correctly handles US market closures (weekends/holidays) by deferring buys to the next market open.

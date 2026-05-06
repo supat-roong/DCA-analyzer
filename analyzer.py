@@ -75,8 +75,11 @@ def save_to_db(df, ticker, conn):
     conn.commit()
 
 def sync_data(tickers, years):
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=years * 365)
+    now = datetime.now()
+    # Start from New Year of (current_year - years)
+    start_year = now.year - years
+    start_date = datetime(start_year, 1, 1)
+    end_date = now
     
     # Apply yfinance limits
     limit_days = INTERVAL_LIMITS.get(INTERVAL)
@@ -98,7 +101,7 @@ def sync_data(tickers, years):
         except Exception:
             db_min, db_max = None, None
 
-        # 1. Forward Sync: Missing recent data
+        # 1. Forward Sync
         buffer = timedelta(days=1) if INTERVAL == "1d" else timedelta(hours=1)
         forward_start = db_max if db_max else start_date
         if forward_start < (end_date - buffer).replace(tzinfo=None):
@@ -106,7 +109,7 @@ def sync_data(tickers, years):
             df_new = yf.download(ticker, start=forward_start, end=end_date, interval=INTERVAL, progress=False)
             save_to_db(df_new, ticker, conn)
 
-        # 2. Backward Sync: Missing historical data
+        # 2. Backward Sync
         if db_min and db_min > (start_date + timedelta(days=2)).replace(tzinfo=None):
             print(f"Syncing {ticker} ({INTERVAL}) backward to {start_date.date()}...")
             df_old = yf.download(ticker, start=start_date, end=db_min, interval=INTERVAL, progress=False)
@@ -115,17 +118,30 @@ def sync_data(tickers, years):
     conn.close()
 
 def get_data_from_cache(ticker, years):
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=years * 365)
+    now = datetime.now()
+    start_year = now.year - years
+    start_date = datetime(start_year, 1, 1)
     
-    # Apply limits for the query too
+    # Exclude current month for fair comparison
+    # End date is the last day of the previous month
+    last_month_end = now.replace(day=1) - timedelta(seconds=1)
+    
+    # Apply limits for the query
     limit_days = INTERVAL_LIMITS.get(INTERVAL)
     if limit_days:
-        start_date = end_date - timedelta(days=limit_days - 1)
+        max_start = now - timedelta(days=limit_days - 1)
+        if start_date < max_start:
+            start_date = max_start
 
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql(f"SELECT * FROM prices WHERE ticker='{ticker}' AND interval='{INTERVAL}' AND Timestamp >= '{start_date.date()}'", 
-                     conn, index_col='Timestamp', parse_dates=['Timestamp'])
+    query = f"""
+        SELECT * FROM prices 
+        WHERE ticker='{ticker}' 
+        AND interval='{INTERVAL}' 
+        AND Timestamp >= '{start_date.strftime('%Y-%m-%d %H:%M:%S')}'
+        AND Timestamp <= '{last_month_end.strftime('%Y-%m-%d %H:%M:%S')}'
+    """
+    df = pd.read_sql(query, conn, index_col='Timestamp', parse_dates=['Timestamp'])
     conn.close()
     return df
 
