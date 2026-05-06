@@ -123,8 +123,8 @@ def get_data_from_cache(ticker, years):
     start_date = datetime(start_year, 1, 1)
     
     # Exclude current month for fair comparison
-    # End date is the last day of the previous month
-    last_month_end = now.replace(day=1) - timedelta(seconds=1)
+    # Use the first day of the current month as the exclusive upper bound
+    current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
     # Apply limits for the query
     limit_days = INTERVAL_LIMITS.get(INTERVAL)
@@ -139,7 +139,7 @@ def get_data_from_cache(ticker, years):
         WHERE ticker='{ticker}' 
         AND interval='{INTERVAL}' 
         AND Timestamp >= '{start_date.strftime('%Y-%m-%d %H:%M:%S')}'
-        AND Timestamp <= '{last_month_end.strftime('%Y-%m-%d %H:%M:%S')}'
+        AND Timestamp < '{current_month_start.strftime('%Y-%m-%d %H:%M:%S')}'
     """
     df = pd.read_sql(query, conn, index_col='Timestamp', parse_dates=['Timestamp'])
     conn.close()
