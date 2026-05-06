@@ -2,7 +2,8 @@
 
 A premium Python utility to analyze and optimize your Dollar Cost Averaging (DCA) strategy for US Market Indices (S&P 500, NASDAQ). Determine the mathematically optimal day of the month to invest based on 20 years of historical data.
 
-![DCA Analysis Example](media/dca_analysis.png)
+<img width="1920" height="1440" alt="dca_analysis" src="https://github.com/user-attachments/assets/dd5e8004-03a1-41e0-8d16-6c46cb706be8" />
+
 
 ## ✨ Features
 
